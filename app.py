@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # This will allow all origins; you can customize as needed
 
 @app.route('/')
 def index():
@@ -11,26 +11,22 @@ def index():
 @app.route('/bfhl', methods=['POST'])
 def process_data():
     try:
-        # Extract data from the request
         data = request.json.get('data', [])
-        
-        # Initialize lists for numbers and alphabets
+        if not isinstance(data, list):
+            raise ValueError("The 'data' field must be a list.")
         numbers = []
         alphabets = []
-        highest_lowercase_alphabet = []  # Changed to a list
-        
-        # Iterate through the data and categorize each item
+        highest_lowercase_alphabet = None
         for item in data:
+            if not isinstance(item, str):
+                raise ValueError("All items in 'data' must be strings.")
             if item.isdigit():
                 numbers.append(item)
             elif item.isalpha():
                 alphabets.append(item)
-                # Check if it's a lowercase alphabet and track the highest one
                 if item.islower():
-                    if not highest_lowercase_alphabet or item > highest_lowercase_alphabet[0]:
-                        highest_lowercase_alphabet = [item]
-        
-        # Create the response object
+                    if highest_lowercase_alphabet is None or item > highest_lowercase_alphabet:
+                        highest_lowercase_alphabet = item
         response = {
             "is_success": True,
             "user_id": "Shubham_Shaswat_10032002",
@@ -38,18 +34,16 @@ def process_data():
             "roll_number": "21BCE0097",
             "numbers": numbers,
             "alphabets": alphabets,
-            "highest_lowercase_alphabet": highest_lowercase_alphabet
+            "highest_lowercase_alphabet": [highest_lowercase_alphabet] if highest_lowercase_alphabet else []
         }
-        
         return jsonify(response)
-    
+    except ValueError as ve:
+        return jsonify({"is_success": False, "error": str(ve)}), 400
     except Exception as e:
-        # Handle any errors
-        return jsonify({"is_success": False, "error": str(e)}), 400
+        return jsonify({"is_success": False, "error": "An unexpected error occurred: " + str(e)}), 500
 
 @app.route('/bfhl', methods=['GET'])
 def get_operation_code():
-    # Return the hardcoded JSON object
     return jsonify({"operation_code": 1})
 
 if __name__ == '__main__':
